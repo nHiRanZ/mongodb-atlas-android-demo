@@ -1,0 +1,11 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url 'https://maven.mongodb.org/releases' }
+    }
+}
+
+rootProject.name = 'MongoDBAtlasDemo'
+include ':app'
