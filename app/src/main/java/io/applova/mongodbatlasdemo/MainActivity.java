@@ -4,6 +4,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,6 +15,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 import io.applova.mongodbatlasdemo.adapter.PersonAdapter;
+import io.applova.mongodbatlasdemo.async.TaskCallback;
 import io.applova.mongodbatlasdemo.databinding.ActivityMainBinding;
 import io.applova.mongodbatlasdemo.domain.Person;
 import io.realm.Realm;
@@ -35,12 +37,13 @@ public class MainActivity extends AppCompatActivity {
     private final String apiKey = "0CfKPr9Pi4meIoj1cV7I7Ux9x4F4yjPSSNl13NpMerk8XheDuLwWsKqUoPWtHnCB";
     private Realm realm;
     private PersonAdapter adapter;
+    private Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
+        context = this;
         App app = new App(new AppConfiguration.Builder(appID).build());
         Credentials credentials = Credentials.apiKey(apiKey);
 
@@ -64,20 +67,28 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(Realm realmInstance) {
                         realm = realmInstance;
-                        RealmResults<Person> people = realm.where(Person.class).findAllAsync();
-                        people.addChangeListener(results -> {
-                            adapter.updateData(results);
+                        adapter = new PersonAdapter(new ArrayList<>(), realm, result -> {
+                            if (result instanceof String) {
+                                String personId = (String) result;
+                                realm.executeTransactionAsync(realm -> {
+                                    Person personToDelete = realm.where(Person.class).equalTo("_id", personId).findFirst();
+                                    if (personToDelete != null) {
+                                        personToDelete.deleteFromRealm();
+                                    }
+                                });
+                            }
                         });
+                        RealmResults<Person> people = realm.where(Person.class).findAllAsync();
+                        binding.personsList.setLayoutManager(new LinearLayoutManager(context));
+                        binding.personsList.setAdapter(adapter);
+
+                        people.addChangeListener(results -> adapter.updateData(results));
                     }
                 });
             } else {
                 Log.e("EXAMPLE", "Failed to log in: " + it.getError().getErrorMessage());
             }
         });
-
-        adapter = new PersonAdapter(new ArrayList<>(), realm);
-        binding.personsList.setLayoutManager(new LinearLayoutManager(this));
-        binding.personsList.setAdapter(adapter);
 
         binding.addPersonButton.setOnClickListener(v -> showDialogToAddPerson());
     }

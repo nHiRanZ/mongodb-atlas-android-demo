@@ -12,17 +12,20 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import io.applova.mongodbatlasdemo.R;
+import io.applova.mongodbatlasdemo.async.TaskCallback;
 import io.applova.mongodbatlasdemo.domain.Person;
 import io.realm.Realm;
 
 public class PersonAdapter extends RecyclerView.Adapter<PersonAdapter.PersonViewHolder> {
 
     private List<Person> personList;
-    private Realm realm; // Assuming you pass the Realm instance to the adapter
+    private Realm realm;
+    private TaskCallback onItemDeleteCallback;
 
-    public PersonAdapter(List<Person> personList, Realm realm) {
+    public PersonAdapter(List<Person> personList, Realm realm, TaskCallback onItemDeleteCallback) {
         this.personList = personList;
         this.realm = realm;
+        this.onItemDeleteCallback = onItemDeleteCallback;
     }
 
     @NonNull
@@ -38,17 +41,7 @@ public class PersonAdapter extends RecyclerView.Adapter<PersonAdapter.PersonView
         holder.nameTextView.setText(person.getName());
         holder.ageTextView.setText(String.valueOf(person.getAge()));
 
-        holder.deleteButton.setOnClickListener(v -> {
-            realm.executeTransactionAsync(realm -> {
-                Person personToDelete = realm.where(Person.class).equalTo("_id", person.get_id()).findFirst();
-                if (personToDelete != null) {
-                    personToDelete.deleteFromRealm();
-                }
-            }, () -> {
-                personList.remove(position);
-                notifyItemRemoved(position);
-            });
-        });
+        holder.deleteButton.setOnClickListener(v -> onItemDeleteCallback.onTaskDone(person.get_id()));
     }
 
     @Override
