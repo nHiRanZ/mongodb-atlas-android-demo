@@ -33,8 +33,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private ActivityMainBinding binding;
-    private final String appID = "application-0-fzyts";
-    private final String apiKey = "0CfKPr9Pi4meIoj1cV7I7Ux9x4F4yjPSSNl13NpMerk8XheDuLwWsKqUoPWtHnCB";
+    private final String appID = "MY_APP_ID";
+    private final String apiKey = "MY_API_KEY";
     private Realm realm;
     private PersonAdapter adapter;
     private Context context;
